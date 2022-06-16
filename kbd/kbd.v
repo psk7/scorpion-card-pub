@@ -1,4 +1,4 @@
-module test(clk, data, cs, ka, kd, kj);
+module kbd(clk, data, cs, ka, kd, kj);
 
 	input wire clk;
 	input wire data;
