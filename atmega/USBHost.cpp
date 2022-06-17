@@ -660,8 +660,13 @@ void USBHost_Run() {
                                               conf_descriptor, interf_descriptor))
                                 return;
 
-                    if (usb_dev_class == 0)
-                        usb_dev_class = interf_descriptor->bInterfaceClass;
+                    // Device is not recognized by any driver
+                    usb_dev_class = 0;
+                    if (!pPortInfo->IsRootPort) {
+                        pPortInfo->Configured = true;       // To leave device alone
+                        pPortInfo->Configuring = false;
+                    }
+                    break;
                 }
 
                 ptr += ptr[0];

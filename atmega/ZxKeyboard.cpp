@@ -1,30 +1,34 @@
 #include "ZxKeyboard.h"
 #include "HIDClassCommon.h"
 #include "Link.h"
+#include "KeysList.h"
+#include "KeyboardMapper.h"
 
 #ifdef WIN32
+
 #include <iostream>
+
 #endif
 
 #define KBD_SHIFTS_SS_MASK 2
 #define KBD_SHIFTS_CS_MASK 1
-#define MAX_PRESSED_KEYS 8
 
 static struct KbdFlags {
     bool WasCS: 1;
     bool WasSS: 1;
     bool IsLeftShiftPressed: 1;
-    bool WasLeftShift: 1;
-    bool WasRightShift: 1;
-    bool WasCtrl: 1;
 } Flags;
 
-uint8_t PrevKbdData[8];
-uint8_t PressedKeys[MAX_PRESSED_KEYS];
+KeysList Keys;
 
-union ZxKeyMap {
-    uint8_t val[5];
+struct ZxKeyMap {
+    uint8_t val[6];
 };
+
+#ifdef WIN32
+ZxKeyMap PrevZxKeys;
+#endif
+
 
 #define GET_ZX_KEY(x, y) (((x).val[((y)-1) >> 3] & (1 << (((y)-1) & 7))) != 0)
 #define SET_ZX_KEY(x, y) x.val[((y)-1) >> 3] |= (1 << (((y)-1) & 7))
@@ -76,54 +80,30 @@ void OutZxKeys(ZXKey Key) {
         _(M)
         _(N)
         _(B)
+        _(Joy_Left)
+        _(Joy_Right)
+        _(Joy_Up)
+        _(Joy_Down)
+        _(Joy_Fire)
 
         default:
             std::cout << "-";
             break;
     }
 }
+
 #endif
 
-static inline const ZxLayoutKeyRef // NOLINT(readability-const-return-type)
-GetLayoutItem(const ZxLayoutKeyRef *Layout, uint8_t Item) {
-#ifdef WIN32
-    auto &key = Layout[Item];
-
-    if (key.Key1 != 0)
-        return key;
-
-    return NormalLayout[Item];
-#else
-    auto s = pgm_read_word(&Layout[Item]);
-
-    if (s == 0)
-        s = pgm_read_word(&NormalLayout[Item]);
-
-    return ZxLayoutKeyRef{
-            .Key1 = static_cast<uint8_t>(s & 0xff),
-            .Key2 = static_cast<uint8_t>((s >> 8) & 0xff)};
-#endif
-}
-
-void UpdateZxKeys() {
-    union ZxKeyMap map{};
-
-    const ZxLayoutKeyRef *Layout = Flags.IsLeftShiftPressed ? &LeftShiftLayout[0] : &NormalLayout[0];
+void UpdateZxKeys(const KeysList &ZxKeys) {
+    struct ZxKeyMap map{};
 
     memset(&map, 0, sizeof map);
 
-    for (const auto &item: PressedKeys) {
-        auto &key = GetLayoutItem(Layout, item);
-        auto zkey = key.Key1 & 0x3f;
+    uint8_t &kempston_joystick = map.val[5];
 
-        if (key.Key1 & CAPS_SHIFT)
-            SET_ZX_KEY(map, ZXKey::CS);
-
-        if (key.Key1 & SYM_SHIFT)
-            SET_ZX_KEY(map, ZXKey::SS);
-
-        SET_ZX_KEY(map, zkey);
-    }
+    for (const auto &key: ZxKeys)
+        if (key != 0)
+            SET_ZX_KEY(map, key);
 
     bool new_ss = GET_ZX_KEY(map, ZXKey::SS);
     bool new_cs = GET_ZX_KEY(map, ZXKey::CS);
@@ -150,12 +130,19 @@ void UpdateZxKeys() {
     WriteZxKeyboard(row2 | (2 << 10));
     WriteZxKeyboard(row3 | (3 << 10));
 
+    WriteZxKeyboard(kempston_joystick | (4 << 10));
+
     Flags.WasSS = new_ss;
     Flags.WasCS = new_cs;
 
 #ifdef WIN32
+    if (memcmp(&map, &PrevZxKeys, sizeof map) == 0)
+        return;
+
+    memcpy(&PrevZxKeys, &map, sizeof map);
+
     bool of = false;
-    for (int i = 1; i <= 40; ++i) {
+    for (int i = 1; i <= 45; ++i) {
         auto k = (ZXKey) i;
         if (GET_ZX_KEY(map, k)) {
             OutZxKeys(k);
@@ -171,13 +158,18 @@ void UpdateZxKeys() {
 #endif
 }
 
+void ZxKeyboard_MapJoystickAndSend(uint16_t JoystickBits) {
+    KeysList ZxKeys;
+
+    MapKeyboard(Flags.IsLeftShiftPressed, Keys, JoystickBits, ZxKeys);
+
+    UpdateZxKeys(ZxKeys);
+}
+
 void ZxKeyboard_Init() {
     Flags.WasCS = false;
     Flags.WasSS = false;
     Flags.IsLeftShiftPressed = false;
-    Flags.WasLeftShift = false;
-    Flags.WasRightShift = false;
-    Flags.WasCtrl = false;
 
     WriteZxKeyboard(0 | (0 << 10));
     WriteZxKeyboard(0 | (1 << 10));
@@ -190,87 +182,54 @@ void ZxKeyboard_ProcessKeyPress(uint8_t ScanCode) {
     if (ScanCode == HID_KEYBOARD_SC_LEFT_SHIFT)
         Flags.IsLeftShiftPressed = true;
 
-    for (auto &key: PressedKeys)
-        if (key == ScanCode || key == 0) {
-            key = ScanCode;
-            break;
-        }
-
-    UpdateZxKeys();
+    Keys << ScanCode;
 }
 
 void ZxKeyboard_ProcessKeyRelease(uint8_t ScanCode) {
     if (ScanCode == HID_KEYBOARD_SC_LEFT_SHIFT)
         Flags.IsLeftShiftPressed = false;
 
-    uint8_t Temp[MAX_PRESSED_KEYS];
-    memcpy(&Temp, &PressedKeys, sizeof PressedKeys);
-    memset(&PressedKeys, 0, sizeof PressedKeys);
-
-    uint8_t *ptr = &PressedKeys[0];
-
-    for (const auto &item: Temp)
-        if (item != ScanCode && item != 0)
-            *(ptr++) = item;
-
-    UpdateZxKeys();
+    Keys -= ScanCode;
 }
 
 void ZxKeyboard_ParseBootProtocolKeyboardReport(uint8_t *Data) {
-    //auto f1 = PrevKbdData[0];
-    //auto f2 = Data[0];
+    KeysList k;
 
     auto mod = Data[0];
 
-    auto ls = (mod & HID_KEYBOARD_MODIFIER_LEFTSHIFT) != 0;
-    auto rs = (mod & HID_KEYBOARD_MODIFIER_RIGHTSHIFT) != 0;
-    auto ctrl = ((mod & HID_KEYBOARD_MODIFIER_RIGHTCTRL) | (mod & HID_KEYBOARD_MODIFIER_LEFTCTRL)) != 0;
+    if (mod & HID_KEYBOARD_MODIFIER_LEFTSHIFT)
+        k << HID_KEYBOARD_SC_LEFT_SHIFT;
 
-    if (ls && !Flags.WasLeftShift)
-        ZxKeyboard_ProcessKeyPress(HID_KEYBOARD_SC_LEFT_SHIFT);
+    if (mod & HID_KEYBOARD_MODIFIER_RIGHTSHIFT)
+        k << HID_KEYBOARD_SC_RIGHT_SHIFT;
 
-    if (!ls && Flags.WasLeftShift)
-        ZxKeyboard_ProcessKeyRelease(HID_KEYBOARD_SC_LEFT_SHIFT);
+    if (mod & HID_KEYBOARD_MODIFIER_LEFTCTRL)
+        k << HID_KEYBOARD_SC_LEFT_CONTROL;
 
-    if (rs && !Flags.WasRightShift)
-        ZxKeyboard_ProcessKeyPress(HID_KEYBOARD_SC_RIGHT_SHIFT);
+    if (mod & HID_KEYBOARD_MODIFIER_RIGHTCTRL)
+        k << HID_KEYBOARD_SC_RIGHT_CONTROL;
 
-    if (!rs && Flags.WasRightShift)
-        ZxKeyboard_ProcessKeyRelease(HID_KEYBOARD_SC_RIGHT_SHIFT);
+    if (mod & HID_KEYBOARD_MODIFIER_LEFTALT)
+        k << HID_KEYBOARD_SC_LEFT_ALT;
 
-    if (ctrl && !Flags.WasCtrl)
-        ZxKeyboard_ProcessKeyPress(HID_KEYBOARD_SC_LEFT_CONTROL);
+    if (mod & HID_KEYBOARD_MODIFIER_RIGHTALT)
+        k << HID_KEYBOARD_SC_RIGHT_ALT;
 
-    if (!ctrl && Flags.WasCtrl)
-        ZxKeyboard_ProcessKeyRelease(HID_KEYBOARD_SC_LEFT_CONTROL);
+    for (uint8_t i = 1; i < 5; ++i)
+        if (Data[i] != 0)
+            k << Data[i];
 
-    Flags.WasRightShift = rs;
-    Flags.WasCtrl = ctrl;
-    Flags.WasLeftShift = ls;
+    auto pressed = k;
+    auto released = Keys;
 
-    uint8_t Temp[8];
-    memcpy(Temp, Data, sizeof PrevKbdData);
+    pressed -= Keys;
+    released -= k;
 
-    for (int i = 2; i < 8; ++i)
-        for (auto &item: PrevKbdData)
-            if (Temp[i] == item)
-                Temp[i] = 0;
+    for (const auto &key: pressed)
+        if (key != 0)
+            ZxKeyboard_ProcessKeyPress(key);
 
-    // Temp contains just pressed scan codes now
-    for (int i = 2; i < 8; ++i)
-        if (Temp[i] != 0)
-            ZxKeyboard_ProcessKeyPress(Temp[i]);
-
-    memcpy(Temp, PrevKbdData, sizeof PrevKbdData);
-    for (int i = 2; i < 8; ++i)
-        for (uint8_t j = 0; j < 8; j++)
-            if (Temp[i] == Data[j])
-                Temp[i] = 0;
-
-    // Temp contains just released scan codes now
-    for (int i = 2; i < 8; ++i)
-        if (Temp[i] != 0)
-            ZxKeyboard_ProcessKeyRelease(Temp[i]);
-
-    memcpy(&PrevKbdData, Data, sizeof PrevKbdData);
+    for (const auto &key: released)
+        if (key != 0)
+            ZxKeyboard_ProcessKeyRelease(key);
 }

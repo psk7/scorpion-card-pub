@@ -13,6 +13,8 @@
 #define STORAGE PROGMEM
 #endif
 
+#include "KeysList.h"
+
 enum ZXKey {
     NoKey = 0,
     CS, Z, X, C, V,
@@ -25,7 +27,11 @@ enum ZXKey {
     P, O, I, U, Y,
 
     Ent, L, K, J, H,
-    Sp, SS, M, N, B
+    Sp, SS, M, N, B,
+
+    Joy_Right, Joy_Left, Joy_Down, Joy_Up, Joy_Fire,
+
+    _End
 };
 
 #define SYM_SHIFT 0x40
@@ -53,6 +59,8 @@ void ZxKeyboard_ProcessKeyPress(uint8_t ScanCode);
 void ZxKeyboard_ProcessKeyRelease(uint8_t ScanCode);
 
 void ZxKeyboard_ParseBootProtocolKeyboardReport(uint8_t *Data);
+
+void ZxKeyboard_MapJoystickAndSend(uint16_t JoystickBits);
 
 #ifdef __cplusplus
 };

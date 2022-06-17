@@ -1,8 +1,11 @@
 #include "HIDJoystick.h"
 #include "HIDReport.h"
+#include "Joystick.h"
 
 #ifdef WIN32
+
 #include <iostream>
+
 #else
 #endif
 
@@ -72,26 +75,29 @@ void JoystickMiniport::OnComplete(uint8_t Address, uint8_t *Buffer) {
     if (Address != Joystick.UsbAddress)
         return;
 
-    int bacc = 0;
+    int bit = 1 << 4;
+
+    Joystick.bits = 0;
 
     for (const auto &item: Joystick.btnids)
-        if (item != 0)
-            bacc |= GetItemInfo(Buffer, HID_ReportItem(item));
+        if (item != 0) {
+            if (GetItemInfo(Buffer, HID_ReportItem(item)))
+                Joystick.bits |= bit;
+
+            bit <<= 1;
+        }
 
     auto x = GetItemInfo(Buffer, Joystick.X);
     auto y = GetItemInfo(Buffer, Joystick.Y);
 
-    Joystick.bits = 0;
     if (x == Joystick.X.log_min)
-        Joystick.bits |= 2;
+        Joystick.bits |= JOYSTICK_LEFT;
     if (x == Joystick.X.log_max)
-        Joystick.bits |= 1;
+        Joystick.bits |= JOYSTICK_RIGHT;
     if (y == Joystick.Y.log_min)
-        Joystick.bits |= 8;
+        Joystick.bits |= JOYSTICK_UP;
     if (y == Joystick.Y.log_max)
-        Joystick.bits |= 4;
-    if (bacc != 0)
-        Joystick.bits |= 16;
+        Joystick.bits |= JOYSTICK_DOWN;
 }
 
 uint8_t JoystickMiniport::GetBits() {

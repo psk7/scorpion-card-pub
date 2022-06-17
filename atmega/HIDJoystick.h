@@ -10,7 +10,7 @@ struct JoystickFDO : public USBTarget {
     uint8_t bits{};
 
     uint8_t btncnt = 0;
-    uint8_t btnids[16]{};
+    uint8_t btnids[12]{};
 
     void Reset();
 };
