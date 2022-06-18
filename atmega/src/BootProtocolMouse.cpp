@@ -29,3 +29,19 @@ bool MouseDriver::Poll() {
 
     return r;
 }
+
+uint8_t MouseDriver::GetX() {
+    return data[1];
+}
+
+uint8_t MouseDriver::GetY() {
+    return data[2];
+}
+
+uint8_t MouseDriver::GetButtons() {
+    return data[0];
+}
+
+uint8_t MouseDriver::GetWheel() {
+    return data[3];
+}

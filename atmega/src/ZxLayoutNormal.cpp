@@ -1,4 +1,5 @@
 #include "ZxKeyboard.h"
+#include "ZxLayout.h"
 
 const ZxLayoutKeyRef NormalLayout[256] STORAGE = {
         {},

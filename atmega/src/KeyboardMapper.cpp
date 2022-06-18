@@ -1,5 +1,6 @@
 #include "KeyboardMapper.h"
 #include "Joystick.h"
+#include "EEPROM.h"
 
 static inline const ZxLayoutKeyRef // NOLINT(readability-const-return-type)
 GetLayoutItem(const ZxLayoutKeyRef *Layout, uint8_t Item) {
@@ -41,18 +42,10 @@ void MapKeyboard(bool IsLeftShiftPressed, const KeysList &ScanCodes, uint16_t Jo
         Target << zkey;
     }
 
-    if (JoystickBits & JOYSTICK_LEFT)
-        Target << ZXKey::Joy_Left;
+    JoystickMappingInfo jmaps{};
+    ConfigStorage >> jmaps;
 
-    if (JoystickBits & JOYSTICK_RIGHT)
-        Target << ZXKey::Joy_Right;
-
-    if (JoystickBits & JOYSTICK_UP)
-        Target << ZXKey::Joy_Up;
-
-    if (JoystickBits & JOYSTICK_DOWN)
-        Target << ZXKey::Joy_Down;
-
-    if (JoystickBits & JOYSTICK_FIRE)
-        Target << ZXKey::Joy_Fire;
+    for (uint8_t i = 0; i < 16; ++i)
+        if ((JoystickBits & (1 << i)) != 0)
+            Target << jmaps.Mappings[0].Binding[i];
 }

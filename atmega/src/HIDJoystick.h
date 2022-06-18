@@ -7,7 +7,7 @@
 struct JoystickFDO : public USBTarget {
     HID_ReportItem X, Y;
 
-    uint8_t bits{};
+    uint16_t bits{};
 
     uint8_t btncnt = 0;
     uint8_t btnids[12]{};
@@ -30,7 +30,7 @@ public:
 
     void OnComplete(uint8_t Address, uint8_t *Buffer) override;
 
-    uint8_t GetBits();
+    uint16_t GetBits();
 };
 
 #endif //CH_HIDJOYSTICK_H

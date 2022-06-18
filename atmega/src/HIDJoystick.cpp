@@ -100,7 +100,7 @@ void JoystickMiniport::OnComplete(uint8_t Address, uint8_t *Buffer) {
         Joystick.bits |= JOYSTICK_DOWN;
 }
 
-uint8_t JoystickMiniport::GetBits() {
+uint16_t JoystickMiniport::GetBits() {
     return Joystick.UsbAddress != 0 ? Joystick.bits : 0;
 }
 

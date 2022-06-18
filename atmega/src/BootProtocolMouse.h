@@ -13,6 +13,14 @@ public:
     void OnData(uint8_t *Buffer) override;
 
     bool Poll() override;
+
+    uint8_t GetX();
+
+    uint8_t GetY();
+
+    uint8_t GetButtons();
+
+    uint8_t GetWheel();
 };
 
 #endif //CH_BOOTPROTOCOLMOUSE_H

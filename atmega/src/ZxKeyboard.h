@@ -4,13 +4,11 @@
 
 #ifdef WIN32
 #include <cstdint>
-#define STORAGE
 #else
 
 #include "stdint.h"
 #include <avr/pgmspace.h>
 
-#define STORAGE PROGMEM
 #endif
 
 #include "KeysList.h"
@@ -60,7 +58,7 @@ void ZxKeyboard_ProcessKeyRelease(uint8_t ScanCode);
 
 void ZxKeyboard_ParseBootProtocolKeyboardReport(uint8_t *Data);
 
-void ZxKeyboard_MapJoystickAndSend(uint16_t JoystickBits);
+bool ZxKeyboard_MapJoystickAndSend(uint16_t JoystickBits);
 
 #ifdef __cplusplus
 };

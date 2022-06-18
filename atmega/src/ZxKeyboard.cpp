@@ -158,12 +158,19 @@ void UpdateZxKeys(const KeysList &ZxKeys) {
 #endif
 }
 
-void ZxKeyboard_MapJoystickAndSend(uint16_t JoystickBits) {
+bool ZxKeyboard_MapJoystickAndSend(uint16_t JoystickBits) {
     KeysList ZxKeys;
 
     MapKeyboard(Flags.IsLeftShiftPressed, Keys, JoystickBits, ZxKeys);
 
     UpdateZxKeys(ZxKeys);
+
+    bool r = false;
+
+    for (const auto &item: ZxKeys)
+        r |= (item != 0);
+
+    return r;
 }
 
 void ZxKeyboard_Init() {
@@ -176,6 +183,8 @@ void ZxKeyboard_Init() {
     WriteZxKeyboard(0 | (2 << 10));
     WriteZxKeyboard(0 | (3 << 10));
     WriteZxKeyboard(0 | (4 << 10));
+
+    WriteExt(0 | (3 << 8));
 }
 
 void ZxKeyboard_ProcessKeyPress(uint8_t ScanCode) {
