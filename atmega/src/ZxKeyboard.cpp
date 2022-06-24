@@ -201,38 +201,38 @@ void ZxKeyboard_ProcessKeyRelease(uint8_t ScanCode) {
     Keys -= ScanCode;
 }
 
-void ZxKeyboard_ParseBootProtocolKeyboardReport(uint8_t *Data) {
-    KeysList k;
-
+void ZxKeyboard_ParseBootProtocolKeyboardReport(uint8_t *Data, KeysList &Target) {
     auto mod = Data[0];
 
     if (mod & HID_KEYBOARD_MODIFIER_LEFTSHIFT)
-        k << HID_KEYBOARD_SC_LEFT_SHIFT;
+        Target << HID_KEYBOARD_SC_LEFT_SHIFT;
 
     if (mod & HID_KEYBOARD_MODIFIER_RIGHTSHIFT)
-        k << HID_KEYBOARD_SC_RIGHT_SHIFT;
+        Target << HID_KEYBOARD_SC_RIGHT_SHIFT;
 
     if (mod & HID_KEYBOARD_MODIFIER_LEFTCTRL)
-        k << HID_KEYBOARD_SC_LEFT_CONTROL;
+        Target << HID_KEYBOARD_SC_LEFT_CONTROL;
 
     if (mod & HID_KEYBOARD_MODIFIER_RIGHTCTRL)
-        k << HID_KEYBOARD_SC_RIGHT_CONTROL;
+        Target << HID_KEYBOARD_SC_RIGHT_CONTROL;
 
     if (mod & HID_KEYBOARD_MODIFIER_LEFTALT)
-        k << HID_KEYBOARD_SC_LEFT_ALT;
+        Target << HID_KEYBOARD_SC_LEFT_ALT;
 
     if (mod & HID_KEYBOARD_MODIFIER_RIGHTALT)
-        k << HID_KEYBOARD_SC_RIGHT_ALT;
+        Target << HID_KEYBOARD_SC_RIGHT_ALT;
 
     for (uint8_t i = 1; i < 5; ++i)
         if (Data[i] != 0)
-            k << Data[i];
+            Target << Data[i];
+}
 
-    auto pressed = k;
+void ZxKeyboard_ProcessKeysList(const KeysList &List) {
+    auto pressed = List;
     auto released = Keys;
 
     pressed -= Keys;
-    released -= k;
+    released -= List;
 
     for (const auto &key: pressed)
         if (key != 0)

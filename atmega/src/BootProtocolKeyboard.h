@@ -6,13 +6,13 @@
 class KeyboardDriver : public BootProtocolDriver {
 public:
     uint8_t data[8] = {};
+    uint8_t leds = 0;
 
     struct {
         bool IsProtocolEnabled: 1;
-        bool OutOrIn: 1;
     };
 
-    KeyboardDriver() : IsProtocolEnabled(false), OutOrIn(false) {}
+    KeyboardDriver() : IsProtocolEnabled(false) {}
 
     bool CheckInterface(USB_StdDescriptor_Interface_t *Interface) override;
 
@@ -21,6 +21,8 @@ public:
     bool Poll() override;
 
     void OnComplete(uint8_t *Buffer, uint8_t Id, PortInfo &Port) override;
+
+    void SetLeds(uint8_t Leds);
 };
 
 #endif //CH_BOOTPROTOCOLKEYBOARD_H

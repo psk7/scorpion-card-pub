@@ -6,6 +6,7 @@ EEPROM ConfigStorage;
 
 static const struct ConfigStorage ConfigurationStorage STORAGE = {
         .Tag = 0xAEAE,
+        .Size = sizeof (ConfigurationStorage),
         .StructRevision = 1,
 
         .BoardSettings = {
@@ -17,7 +18,8 @@ static const struct ConfigStorage ConfigurationStorage STORAGE = {
                 .AxisDivider = 2,
                 .WheelDivider = 1,
                 .ButtonSwap = false,
-                .WheelEnabled = true
+                .WheelEnabled = true,
+                .WheelInverse = true
         },
 
         .DedicatedKeys = {

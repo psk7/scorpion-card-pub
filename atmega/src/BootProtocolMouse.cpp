@@ -10,14 +10,11 @@ void MouseDriver::OnData(uint8_t *Buffer) {
     if (Buffer == nullptr)
         return;
 
-    int8_t dx = Buffer[1];
-    int8_t dy = Buffer[2];
-    int8_t dw = Buffer[3];
+    x += (int16_t) (int8_t)Buffer[1];
+    y -= (int16_t) (int8_t)Buffer[2];
 
-    data[0] = Buffer[0];
-    data[1] += dx;
-    data[2] += dy;
-    data[3] += dw;
+    buttons = Buffer[0];
+    wh += (int8_t)Buffer[3];
 
     NewData = true;
 }
@@ -30,18 +27,18 @@ bool MouseDriver::Poll() {
     return r;
 }
 
-uint8_t MouseDriver::GetX() {
-    return data[1];
+int16_t MouseDriver::GetX() const {
+    return x;
 }
 
-uint8_t MouseDriver::GetY() {
-    return data[2];
+int16_t MouseDriver::GetY() const {
+    return y;
 }
 
-uint8_t MouseDriver::GetButtons() {
-    return data[0];
+uint8_t MouseDriver::GetButtons() const {
+    return buttons;
 }
 
-uint8_t MouseDriver::GetWheel() {
-    return data[3];
+int8_t MouseDriver::GetWheel() const {
+    return wh;
 }

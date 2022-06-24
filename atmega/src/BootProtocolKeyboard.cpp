@@ -15,8 +15,6 @@ bool KeyboardDriver::CheckInterface(USB_StdDescriptor_Interface_t *Interface) {
 }
 
 void KeyboardDriver::OnData(uint8_t *Buffer) {
-    OutOrIn = false;
-
     if (Buffer == nullptr)
         return;     // NACK
 
@@ -43,31 +41,29 @@ bool KeyboardDriver::Poll() {
             return true;
         }
 
-        if (!OutOrIn) {
-            uint8_t cmd[] = {0b00100001, 0x09, 0, 2, 0, 0, 1, 0};
-            uint8_t d[] = {7};
-            RequestControlWrite(cmd, sizeof d, &d[0], 0x82, *this);
-        } else
-            RequestBulkIn(8, 0x80, *this);
+        uint8_t cmd[] = {0b00100001, 0x09, 0, 2, 0, 0, 1, 0};
+        uint8_t d[] = {leds};
+        RequestControlWrite(cmd, sizeof d, &d[0], 8, *this);
     }
 
     return r;
 }
 
 void KeyboardDriver::OnComplete(uint8_t *Buffer, uint8_t Id, PortInfo &Port) {
-    OutOrIn = !OutOrIn;
-
     switch (Id) {
         case 7:
             CompletePoll();
             break;
 
-        case 0x82:
-            CompletePoll();
-            OutOrIn = true;
+        case 8:
+            RequestBulkIn(8, 0x80, *this);
             break;
 
         default:
             break;
     }
+}
+
+void KeyboardDriver::SetLeds(uint8_t Leds) {
+    leds = Leds;
 }

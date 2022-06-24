@@ -1,5 +1,6 @@
 #include "Link.h"
 #include "avr/io.h"
+#include "util/delay.h"
 
 #define SPI_SS PORTB0
 #define SPI_SCK PORTB1
@@ -113,7 +114,7 @@ uint8_t WriteUSBControl(uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4, uint8_t 
     uint8_t rval = SPDR;
     uint8_t *ptr = &buf[0];
 
-    for(uint8_t i=0; i<8; i++) {
+    for (uint8_t i = 0; i < 8; i++) {
         SPDR = *(ptr++);
         while (!(SPSR & _BV(SPIF)));
     }
@@ -135,7 +136,7 @@ uint8_t WriteUSBControl(uint8_t (&b)[8]) {
     uint8_t rval = SPDR;
     uint8_t *ptr = &b[0];
 
-    for(uint8_t i=0; i<8; i++) {
+    for (uint8_t i = 0; i < 8; i++) {
         SPDR = *(ptr++);
         while (!(SPSR & _BV(SPIF)));
     }
@@ -166,15 +167,17 @@ uint8_t WriteUSB(uint8_t reg, uint8_t value) {
     return rval;
 }
 
-uint8_t WriteUSB(uint8_t reg, uint8_t size, uint8_t *buffer){
+uint8_t WriteUSB(uint8_t reg, uint8_t size, uint8_t *buffer) {
     // SPI mode == 0
     // SPI clock == 4 MHz
     // SPI enabled
     SPCR = _BV(MSTR) | _BV(SPE);
 
     SPI_USB_SS_PORT &= ~_BV(SPI_USB_SS);      // USB SS - low
-    SPDR = (reg << 3) & 0xff;
+
+    SPDR = ((reg << 3) | 0x2) & 0xff;
     while (!(SPSR & _BV(SPIF)));
+
     uint8_t rval = SPDR;
 
     for (uint8_t i = 0; i < size; ++i) {
@@ -252,9 +255,11 @@ void WriteExt(uint16_t Value) {
     SPCR = _BV(MSTR) | _BV(CPHA) | _BV(SPE) | _BV(SPR0);
 
     SPI_EXT_SS_PORT &= ~_BV(SPI_EXT_SS);      // EXT SS - low
+    _delay_us(1);
     SPDR = (Value >> 8) & 0xff;
     while (!(SPSR & _BV(SPIF)));
     SPDR = Value & 0xff;
     while (!(SPSR & _BV(SPIF)));
+    _delay_us(1);
     SPI_EXT_SS_PORT |= _BV(SPI_EXT_SS);      // EXT SS - High
 }

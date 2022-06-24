@@ -56,9 +56,11 @@ void ZxKeyboard_ProcessKeyPress(uint8_t ScanCode);
 
 void ZxKeyboard_ProcessKeyRelease(uint8_t ScanCode);
 
-void ZxKeyboard_ParseBootProtocolKeyboardReport(uint8_t *Data);
+void ZxKeyboard_ParseBootProtocolKeyboardReport(uint8_t *Data, KeysList &Target);
 
 bool ZxKeyboard_MapJoystickAndSend(uint16_t JoystickBits);
+
+void ZxKeyboard_ProcessKeysList(const KeysList &List);
 
 #ifdef __cplusplus
 };

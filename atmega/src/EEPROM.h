@@ -25,6 +25,7 @@ struct KempstonMouseSettingsInfo {
     uint8_t WheelDivider;
     bool ButtonSwap;
     bool WheelEnabled;
+    bool WheelInverse;
 };
 
 struct TurboSettingsInfo {
@@ -46,6 +47,7 @@ struct BoardSettingsInfo {
 
 struct ConfigStorage {
     uint16_t Tag;
+    uint16_t Size;
     uint8_t StructRevision;
 
     BoardSettingsInfo BoardSettings;

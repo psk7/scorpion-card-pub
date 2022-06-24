@@ -4,8 +4,12 @@
 #include "BootProtocolDriver.h"
 
 class MouseDriver : public BootProtocolDriver {
+private:
+    int16_t x = 0, y = 0;
+    int8_t wh = 0, buttons = 0;
+
 public:
-    uint8_t data[4];
+    //uint8_t data[4];
     bool NewData = false;
 
     bool CheckInterface(USB_StdDescriptor_Interface_t *Interface) override;
@@ -14,13 +18,13 @@ public:
 
     bool Poll() override;
 
-    uint8_t GetX();
+    int16_t GetX() const;
 
-    uint8_t GetY();
+    int16_t GetY() const;
 
-    uint8_t GetButtons();
+    uint8_t GetButtons() const;
 
-    uint8_t GetWheel();
+    int8_t GetWheel() const;
 };
 
 #endif //CH_BOOTPROTOCOLMOUSE_H
