@@ -1,0 +1,7 @@
+#!/bin/sh
+
+mkdir release
+cd release
+
+cmake ..
+cmake --build .

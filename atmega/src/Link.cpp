@@ -40,48 +40,34 @@
 #define SPI_EXT_SS PORTC6
 #define SPI_DD_EXT_SS DDC6
 
-uint8_t USB_Read(uint8_t reg, uint8_t size, uint8_t *rd_buf) {
-    // SPI mode == 0
-    // SPI clock == 4 MHz
-    // SPI enabled
-    SPCR = _BV(MSTR) | _BV(SPE);
+void InitializeLinks() {
+    SPI_DDR |= _BV(DD_SPI_SS);   // SS - output
+    SPI_DDR |= _BV(DD_SPI_SCK);  // SCK - output
+    SPI_DDR |= _BV(DD_SPI_MOSI); // MOSI - output
 
-    SPI_USB_SS_PORT &= ~_BV(SPI_USB_SS);      // USB SS - low
-    SPDR = (reg << 3) & 0xff;
-    while (!(SPSR & _BV(SPIF)));
-    uint8_t rval = SPDR;
+    SPI_SYNC_SS_DDR |= _BV(SPI_DD_SYNC_SS);    // Sync SS - output
+    SPI_SYNC_SS_PORT |= _BV(SPI_SYNC_SS);      // Sync SS - High
 
-    for (uint8_t i = 0; i < size; ++i) {
-        SPDR = 0;
-        while (!(SPSR & _BV(SPIF)));
-        *(rd_buf++) = SPDR;
-    }
+    SPI_KBD_SS_DDR |= _BV(SPI_DD_KBD_SS);    // KBD SS - output
+    SPI_KBD_SS_PORT |= _BV(SPI_KBD_SS);      // KBD SS - High
 
+    SPI_USB_SS_DDR |= _BV(SPI_DD_USB_SS);    // USB SS - output
     SPI_USB_SS_PORT |= _BV(SPI_USB_SS);      // USB SS - High
 
-    return rval;
-}
+    SPI_USB_URES_DDR |= _BV(SPI_DD_USB_URES);    // USB Res - output
+    SPI_USB_URES_PORT |= _BV(SPI_USB_URES);      // USB Res - High
 
-uint8_t USB_Write(uint8_t reg, uint8_t size, uint8_t *wr_buf, uint8_t *rd_buf) {
-    // SPI mode == 0
-    // SPI clock == 4 MHz
-    // SPI enabled
-    SPCR = _BV(MSTR) | _BV(SPE);
+    SPI_EXT_SS_DDR |= _BV(SPI_DD_EXT_SS);    // EXT SS - output
+    SPI_EXT_SS_PORT |= _BV(SPI_EXT_SS);      // EXT SS - High
 
-    SPI_USB_SS_PORT &= ~_BV(SPI_USB_SS);      // USB SS - low
-    SPDR = ((reg << 3) | 0x2) & 0xff;
-    while (!(SPSR & _BV(SPIF)));
-    uint8_t rval = SPDR;
+    PORTD &= ~_BV(PORTD3);                      // Hard reset Z state
+    DDRD &= ~_BV(DDD3);                         // Hard reset Z state
 
-    for (uint8_t i = 0; i < size; ++i) {
-        SPDR = *(wr_buf++);
-        while (!(SPSR & _BV(SPIF)));
-        *(rd_buf++) = SPDR;
-    }
+    PORTD &= ~_BV(PORTD7);
+    DDRD &= ~_BV(DDD7);                         // NMI Z state
 
-    SPI_USB_SS_PORT |= _BV(SPI_USB_SS);      // USB SS - High
-
-    return rval;
+    PORTD &= ~_BV(PORTD6);
+    DDRD &= ~_BV(DDD6);                         // Turbo switch Z state
 }
 
 uint8_t WriteSync(uint8_t val) {
@@ -161,6 +147,28 @@ uint8_t WriteUSB(uint8_t reg, uint8_t value) {
 
     SPDR = value;
     while (!(SPSR & _BV(SPIF)));
+
+    SPI_USB_SS_PORT |= _BV(SPI_USB_SS);      // USB SS - High
+
+    return rval;
+}
+
+uint8_t WriteUSB(uint8_t reg, uint8_t size, uint8_t *wr_buf, uint8_t *rd_buf) {
+    // SPI mode == 0
+    // SPI clock == 4 MHz
+    // SPI enabled
+    SPCR = _BV(MSTR) | _BV(SPE);
+
+    SPI_USB_SS_PORT &= ~_BV(SPI_USB_SS);      // USB SS - low
+    SPDR = ((reg << 3) | 0x2) & 0xff;
+    while (!(SPSR & _BV(SPIF)));
+    uint8_t rval = SPDR;
+
+    for (uint8_t i = 0; i < size; ++i) {
+        SPDR = *(wr_buf++);
+        while (!(SPSR & _BV(SPIF)));
+        *(rd_buf++) = SPDR;
+    }
 
     SPI_USB_SS_PORT |= _BV(SPI_USB_SS);      // USB SS - High
 

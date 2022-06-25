@@ -1,1 +1,4 @@
 CMakeFiles/
+
+release/*
+!release/*.hex
