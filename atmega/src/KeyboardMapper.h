@@ -3,7 +3,22 @@
 
 #include "KeysList.h"
 #include "ZxKeyboard.h"
+#include "EEPROM.h"
 
-void MapKeyboard(bool IsLeftShiftPressed, const KeysList &ScanCodes, uint16_t JoystickBits, KeysList &Target);
+class KeyboardMapper {
+    struct JoystickMappingInfo::ZxJoystickMapping zjm{};
+    struct JoystickMappingInfo::Mapping::Bindings binds{};
+    KeysList &ZxKeys;
+
+public:
+    KeyboardMapper() = delete;
+    explicit KeyboardMapper(uint8_t JoystickMap, KeysList &ZxKeys);
+
+    void MapKeyboard(bool IsLeftShiftPressed, const KeysList &ScanCodes);
+
+    void MapJoystick(uint16_t JoystickBits);
+
+    void MapZxJoystick(uint8_t ZxJoystickBits);
+};
 
 #endif //CH_KEYBOARDMAPPER_H

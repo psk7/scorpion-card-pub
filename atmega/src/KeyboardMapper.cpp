@@ -23,7 +23,7 @@ GetLayoutItem(const ZxLayoutKeyRef *Layout, uint8_t Item) {
 #endif
 }
 
-void MapKeyboard(bool IsLeftShiftPressed, const KeysList &ScanCodes, uint16_t JoystickBits, KeysList &Target) {
+void KeyboardMapper::MapKeyboard(bool IsLeftShiftPressed, const KeysList &ScanCodes) {
     const ZxLayoutKeyRef *Layout = IsLeftShiftPressed ? &LeftShiftLayout[0] : &NormalLayout[0];
 
     for (const auto &item: ScanCodes) {
@@ -34,18 +34,39 @@ void MapKeyboard(bool IsLeftShiftPressed, const KeysList &ScanCodes, uint16_t Jo
         uint8_t zkey = key.Key1 & 0x3f;
 
         if (key.Key1 & CAPS_SHIFT)
-            Target << ZXKey::CS;
+            ZxKeys << ZXKey::CS;
 
         if (key.Key1 & SYM_SHIFT)
-            Target << ZXKey::SS;
+            ZxKeys << ZXKey::SS;
 
-        Target << zkey;
+        ZxKeys << zkey;
     }
+}
 
-    JoystickMappingInfo jmaps{};
-    ConfigStorage >> jmaps;
-
+void KeyboardMapper::MapJoystick(uint16_t JoystickBits) {
     for (uint8_t i = 0; i < 16; ++i)
         if ((JoystickBits & (1 << i)) != 0)
-            Target << jmaps.Mappings[0].Binding[i];
+            ZxKeys << binds.Binding[i];
+}
+
+void KeyboardMapper::MapZxJoystick(uint8_t ZxJoystickBits) {
+    if (ZxJoystickBits & JOYSTICK_LEFT)
+        ZxKeys << zjm.Left;
+
+    if (ZxJoystickBits & JOYSTICK_RIGHT)
+        ZxKeys << zjm.Right;
+
+    if (ZxJoystickBits & JOYSTICK_UP)
+        ZxKeys << zjm.Up;
+
+    if (ZxJoystickBits & JOYSTICK_DOWN)
+        ZxKeys << zjm.Down;
+
+    if (ZxJoystickBits & JOYSTICK_FIRE)
+        ZxKeys << zjm.Fire;
+}
+
+KeyboardMapper::KeyboardMapper(uint8_t JoystickMap, KeysList &ZxKeys) : ZxKeys(ZxKeys) {
+    ConfigStorage.ReadZxJoystickMappings(JoystickMap, zjm);
+    ConfigStorage.ReadJoystickMappings(JoystickMap, binds);
 }

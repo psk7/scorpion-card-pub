@@ -799,7 +799,7 @@ void USBDriver::RequestControlWrite(uint8_t (&Command)[8], uint8_t Size, uint8_t
     //UniDelay(1);
     WaitComplete();
 
-    WriteUSB(HCTL, RCVTOG1);
+    WriteUSB(HCTL, SNDTOG1);
     SetupSendStream(Size, 0x20, data, States::HS_IN, States::DriverPending);
 }
 

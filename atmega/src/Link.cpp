@@ -68,6 +68,9 @@ void InitializeLinks() {
 
     PORTD &= ~_BV(PORTD6);
     DDRD &= ~_BV(DDD6);                         // Turbo switch Z state
+
+    DDRC &= ~_BV(DDC7);                         // Ext interrupt input
+    PORTC |= _BV(PORTC7);                       // Ext interrupt pulled up
 }
 
 uint8_t WriteSync(uint8_t val) {
@@ -256,18 +259,62 @@ void WriteZxKeyboard(uint16_t Value) {
     SPI_KBD_SS_PORT |= _BV(SPI_KBD_SS);      // Sync SS - High
 }
 
-void WriteExt(uint16_t Value) {
+uint16_t WriteExt(uint16_t Value) {
     // SPI mode == 1
     // SPI clock == 1 MHz
     // SPI enabled
     SPCR = _BV(MSTR) | _BV(CPHA) | _BV(SPE) | _BV(SPR0);
 
+    uint16_t r;
+
     SPI_EXT_SS_PORT &= ~_BV(SPI_EXT_SS);      // EXT SS - low
-    _delay_us(1);
+    _delay_us(10);
+
     SPDR = (Value >> 8) & 0xff;
     while (!(SPSR & _BV(SPIF)));
+    r = SPDR << 8;
+
     SPDR = Value & 0xff;
     while (!(SPSR & _BV(SPIF)));
-    _delay_us(1);
+    r |= SPDR;
+
+    _delay_us(10);
     SPI_EXT_SS_PORT |= _BV(SPI_EXT_SS);      // EXT SS - High
+
+    _delay_us(50);
+
+    return r;
+}
+
+uint16_t WriteExtAndReadBack(uint16_t Value) {
+    // SPI mode == 1
+    // SPI clock == 1 MHz
+    // SPI enabled
+    SPCR = _BV(MSTR) | _BV(CPHA) | _BV(SPE) | _BV(SPR0);
+
+    uint16_t r;
+
+    SPI_EXT_SS_PORT &= ~_BV(SPI_EXT_SS);      // EXT SS - low
+    _delay_us(10);
+
+    SPDR = (Value >> 8) & 0xff;
+    while (!(SPSR & _BV(SPIF)));
+
+    SPDR = Value & 0xff;
+    while (!(SPSR & _BV(SPIF)));
+
+    SPDR = (Value >> 8) & 0xff;
+    while (!(SPSR & _BV(SPIF)));
+    r = SPDR << 8;
+
+    SPDR = Value & 0xff;
+    while (!(SPSR & _BV(SPIF)));
+    r |= SPDR;
+
+    _delay_us(10);
+    SPI_EXT_SS_PORT |= _BV(SPI_EXT_SS);      // EXT SS - High
+
+    _delay_us(50);
+
+    return r;
 }

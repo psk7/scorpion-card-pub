@@ -34,13 +34,20 @@ struct TurboSettingsInfo {
 };
 
 struct JoystickMappingInfo {
+    struct ZxJoystickMapping {
+        uint8_t Left, Right, Up, Down, Fire;
+    } ZxJoystickMapping[4];
     struct Mapping {
         uint16_t JoystickId;
-        uint8_t Binding[16];
+
+        struct Bindings {
+            uint8_t Binding[16];
+        } Bindings[4];
     } Mappings[4];
 };
 
 struct BoardSettingsInfo {
+    bool ExtLinkEnabled;
     bool Led1Enabled;
     bool Led2Enabled;
 };
@@ -70,6 +77,12 @@ public:
     void operator>>(TurboSettingsInfo &Target);
 
     void operator>>(JoystickMappingInfo &Target);
+
+    void operator>>(BoardSettingsInfo &Target);
+
+    void ReadZxJoystickMappings(uint8_t MapNum, struct JoystickMappingInfo::ZxJoystickMapping &Target);
+
+    void ReadJoystickMappings(uint8_t MapNum, struct JoystickMappingInfo::Mapping::Bindings &Target);
 };
 
 extern EEPROM ConfigStorage;

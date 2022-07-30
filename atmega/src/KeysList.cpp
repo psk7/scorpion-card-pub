@@ -14,6 +14,11 @@ KeysList &KeysList::operator<<(uint8_t Key) {
     return *this;
 }
 
+KeysList &KeysList::operator+=(uint8_t Key) {
+    *this << Key;
+    return *this;
+}
+
 void KeysList::operator-=(const KeysList &B) {
     for (auto &i: keys)
         if (i != 0)

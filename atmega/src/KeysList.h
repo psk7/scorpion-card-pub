@@ -42,6 +42,7 @@ public:
     iterator end() const { return {&keys[KEYLIST_MAX_SIZE]}; }
 
     KeysList &operator<<(uint8_t Key);
+    KeysList &operator+=(uint8_t Key);
 
     void operator-=(const KeysList &B);
 

@@ -85,7 +85,7 @@ VCCINT                       : 17        : power  :                   : 3.3V    
 out_sync                     : 18        : output : 3.3-V LVTTL       :         :           : Y              
 usb_ss5                      : 19        : input  : 3.3-V LVTTL       :         :           : Y              
 ss                           : 20        : input  : 3.3-V LVTTL       :         :           : Y              
-RESERVED                     : 21        :        :                   :         :           :                
+rst                          : 21        : input  : 3.3-V LVTTL       :         :           : Y              
 sck5                         : 22        : input  : 3.3-V LVTTL       :         :           : Y              
 mosi5                        : 23        : input  : 3.3-V LVTTL       :         :           : Y              
 GND                          : 24        : gnd    :                   :         :           :                

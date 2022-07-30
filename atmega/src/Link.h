@@ -29,7 +29,8 @@ uint8_t WriteSync(uint8_t val);
 uint8_t ReadUSB(uint8_t reg, uint8_t size, uint8_t *buffer);
 uint8_t WriteUSB(uint8_t reg, uint8_t size, uint8_t *rd_buf, uint8_t *rdbuffer);
 void WriteZxKeyboard(uint16_t Value);
-void WriteExt(uint16_t Value);
+uint16_t WriteExt(uint16_t Value);
+uint16_t WriteExtAndReadBack(uint16_t Value);
 
 #if defined(__cplusplus)
 }

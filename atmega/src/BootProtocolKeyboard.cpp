@@ -19,6 +19,7 @@ void KeyboardDriver::OnData(uint8_t *Buffer) {
         return;     // NACK
 
     memcpy(&data, Buffer, sizeof data);
+    NewData = true;
 }
 
 bool KeyboardDriver::Poll() {

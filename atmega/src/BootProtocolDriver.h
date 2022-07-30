@@ -5,6 +5,8 @@
 
 class BootProtocolDriver : public USBDriver, public USBTarget {
 public:
+    bool NewData = false;
+
     bool Analyze(uint8_t Address, bool IsLowSpeed, uint8_t DeviceClass,
                  USB_StdDescriptor_Configuration_Header_t *Configuration,
                  USB_StdDescriptor_Interface_t *Interface) override;

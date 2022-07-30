@@ -8,6 +8,7 @@
 #include "Link.h"
 #include "ZxKeyboard.h"
 #include "EEPROM.h"
+#include "Joystick.h"
 
 HIDDriver hid;
 JoystickMiniport jport;
@@ -22,6 +23,8 @@ static struct _UsbHostFlags {
     bool PrevSwapPressed: 1;
 } Flags;
 
+ZxKeyboard zxKeyboard;
+
 void UsbHostTask_Init() {
     Flags.SessionButtonSwap = false;
     Flags.PrevSwapPressed = false;
@@ -31,7 +34,7 @@ void UsbHostTask_Init() {
 
     hid.RegisterPort(jport);
 
-    ZxKeyboard_Init();
+    zxKeyboard.Init();
 
     USBHost_Init(drivers);
 }
@@ -44,29 +47,15 @@ void UsbHostTask_Run(void *debugdata, bool outdevices, bool outkbd) {
     USBHost_FillDebug(ptr);
     USBHost_Run();
 
-    bool UserPause = false;
+    bool HasNewKeyboardData = keyboardDriver.NewData;
+    keyboardDriver.NewData = false;
 
-    if (keyboardDriver.UsbAddress != 0 && outkbd) {
-        KeysList Keys;
-        ZxKeyboard_ParseBootProtocolKeyboardReport(keyboardDriver.data, Keys);
+    if (keyboardDriver.UsbAddress != 0 && outkbd && HasNewKeyboardData) {
+        zxKeyboard.ParseBootProtocolKeyboardReport(keyboardDriver.data);
 
-        ZxKeyboard_ProcessKeysList(Keys);
-
-        bool Ctrl = false;
-        bool Alt = false;
-        bool Zero = false;
-
-        for (const auto &key: Keys) {
-            if (key == 0)
-                continue;
-
-            Alt |= (key == HID_KEYBOARD_SC_LEFT_ALT);
-            Alt |= (key == HID_KEYBOARD_SC_RIGHT_ALT);
-            Ctrl |= (key == HID_KEYBOARD_SC_LEFT_CONTROL);
-            Ctrl |= (key == HID_KEYBOARD_SC_RIGHT_CONTROL);
-            Zero |= (key == HID_KEYBOARD_SC_0_AND_CLOSING_PARENTHESIS);
-            UserPause |= (key == HID_KEYBOARD_SC_PAUSE);
-        }
+        bool Ctrl = zxKeyboard.IsCtrlPressed();
+        bool Alt = zxKeyboard.IsAltPressed();
+        bool Zero = zxKeyboard.IsKeyPressed(HID_KEYBOARD_SC_0_AND_CLOSING_PARENTHESIS);
 
         bool SwapPressed = Ctrl && Alt && Zero;
 
@@ -76,21 +65,44 @@ void UsbHostTask_Run(void *debugdata, bool outdevices, bool outkbd) {
         Flags.PrevSwapPressed = SwapPressed;
     }
 
-    auto btnled = ZxKeyboard_MapJoystickAndSend(jport.GetBits());
+#ifndef WIN32
+    uint8_t zj = 0;
+
+    if (!(PIND & _BV(PIND1)))
+        zj |= JOYSTICK_LEFT;
+
+    if (!(PINC & _BV(PINC2)))
+        zj |= JOYSTICK_RIGHT;
+
+    if (!(PIND & _BV(PIND2)))
+        zj |= JOYSTICK_UP;
+
+    if (!(PIND & _BV(PIND0)))
+        zj |= JOYSTICK_DOWN;
+
+    if (!(PIND & _BV(PIND4)))
+        zj |= JOYSTICK_FIRE;
+#else
+    uint8_t zj = 0;
+#endif
+
+    auto btnled = zxKeyboard.MapJoystickAndSend(jport.GetBits(), zj);
 
     if (mouseDriver.NewData) {
+        mouseDriver.NewData = false;
+
         btnled = true;
         KempstonMouseSettingsInfo mouseSettings{};
         ConfigStorage >> mouseSettings;
 
-        auto mx = (int16_t) (mouseDriver.GetX() / mouseSettings.AxisDivider);
-        auto my = (int16_t) (mouseDriver.GetY() / mouseSettings.AxisDivider);
-        auto mw = (int8_t) (mouseSettings.WheelEnabled ? mouseDriver.GetWheel() : 0);
+        auto mx = (int16_t)(mouseDriver.GetX() / mouseSettings.AxisDivider);
+        auto my = (int16_t)(mouseDriver.GetY() / mouseSettings.AxisDivider);
+        auto mw = (int8_t)(mouseSettings.WheelEnabled ? mouseDriver.GetWheel() : 0);
 
         if (mouseSettings.WheelInverse)
-            mw = (int8_t) (-mw);
+            mw = (int8_t)(-mw);
 
-        mw = (int8_t) (mw / mouseSettings.WheelDivider);
+        mw = (int8_t)(mw / mouseSettings.WheelDivider);
 
         uint8_t rawbuttons = mouseDriver.GetButtons();
 
@@ -108,14 +120,19 @@ void UsbHostTask_Run(void *debugdata, bool outdevices, bool outkbd) {
         auto emy = (uint8_t) my;
         uint8_t emw = (((uint8_t) mw) << 4) & 0xf0;
 
-        WriteExt(((emw | button) ^ 0xae) | (0 << 8));    // FADF
-        WriteExt((emx ^ 0xea) | (1 << 8));               // FBDF
-        WriteExt((emy ^ 0x77) | (2 << 8));               // FFDF
-
-        mouseDriver.NewData = false;
+        WriteExt((emw | button) | (0 << 8));    // FADF
+        WriteExt(emx | (1 << 8));               // FBDF
+        WriteExt(emy | (2 << 8));               // FFDF
     }
 
-    WriteExt((UserPause ? 1 : 0) | (3 << 8));
+    BoardSettingsInfo info{};
+    ConfigStorage >> info;
+
+    uint8_t ev = zxKeyboard.IsKeyPressed(HID_KEYBOARD_SC_PAUSE) ? 1 : 0;
+    if (info.ExtLinkEnabled)
+        ev |= 2;
+
+    WriteExt(ev | (3 << 8));
 
     WriteSync(btnled ? 4 : 0);
 
@@ -137,7 +154,7 @@ void UsbHostTask_Run(void *debugdata, bool outdevices, bool outkbd) {
     }
 
     // Check hard reset and NMI
-    if (keyboardDriver.UsbAddress != 0) {
+    if (keyboardDriver.UsbAddress != 0 && HasNewKeyboardData) {
         DedicatedKeysInfo keys{};
         ConfigStorage >> keys;
 

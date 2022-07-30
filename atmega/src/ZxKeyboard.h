@@ -50,17 +50,44 @@ extern const ZxLayoutKeyRef LeftShiftLayout[256];
 extern "C" {
 #endif
 
-void ZxKeyboard_Init();
+class ZxKeyboard{
+private:
+    KeysList Keys;
 
-void ZxKeyboard_ProcessKeyPress(uint8_t ScanCode);
+    void UpdateZxKeys(const KeysList &ZxKeys);
 
-void ZxKeyboard_ProcessKeyRelease(uint8_t ScanCode);
+public:
+    struct {
+        bool WasCS: 1;
+        bool WasSS: 1;
+        bool IsLeftShiftPressed: 1;
+        bool IsLeftCtrlPressed: 1;
+        bool IsLeftAltPressed: 1;
+        bool IsRightShiftPressed: 1;
+        bool IsRightCtrlPressed: 1;
+        bool IsRightAltPressed: 1;
+        bool IsWinPressed: 1;
+        uint8_t JoyMapNum : 2;
+    };
 
-void ZxKeyboard_ParseBootProtocolKeyboardReport(uint8_t *Data, KeysList &Target);
+    void Init();
 
-bool ZxKeyboard_MapJoystickAndSend(uint16_t JoystickBits);
+    void ParseBootProtocolKeyboardReport(uint8_t *Data);
 
-void ZxKeyboard_ProcessKeysList(const KeysList &List);
+    bool MapJoystickAndSend(uint16_t JoystickBits, uint8_t ZxJoystickBits);
+
+    void ProcessKeysList(const KeysList &List);
+
+    void KeyPress(uint8_t ScanCode);
+
+    void KeyRelease(uint8_t ScanCode);
+
+    bool IsCtrlPressed() const;
+
+    bool IsAltPressed() const;
+
+    bool IsKeyPressed(uint8_t ScanCode);
+};
 
 #ifdef __cplusplus
 };

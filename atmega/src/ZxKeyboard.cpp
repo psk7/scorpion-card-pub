@@ -13,22 +13,13 @@
 #define KBD_SHIFTS_SS_MASK 2
 #define KBD_SHIFTS_CS_MASK 1
 
-static struct KbdFlags {
-    bool WasCS: 1;
-    bool WasSS: 1;
-    bool IsLeftShiftPressed: 1;
-} Flags;
-
-KeysList Keys;
-
+#ifdef WIN32
 struct ZxKeyMap {
     uint8_t val[6];
 };
 
-#ifdef WIN32
 ZxKeyMap PrevZxKeys;
 #endif
-
 
 #define GET_ZX_KEY(x, y) (((x).val[((y)-1) >> 3] & (1 << (((y)-1) & 7))) != 0)
 #define SET_ZX_KEY(x, y) x.val[((y)-1) >> 3] |= (1 << (((y)-1) & 7))
@@ -94,7 +85,11 @@ void OutZxKeys(ZXKey Key) {
 
 #endif
 
-void UpdateZxKeys(const KeysList &ZxKeys) {
+void ZxKeyboard::UpdateZxKeys(const KeysList &ZxKeys) {
+    struct ZxKeyMap {
+        uint8_t val[6];
+    };
+
     struct ZxKeyMap map{};
 
     memset(&map, 0, sizeof map);
@@ -115,10 +110,10 @@ void UpdateZxKeys(const KeysList &ZxKeys) {
 
     uint8_t presend = 0;
 
-    if (new_ss && !Flags.WasSS) // SS pressed now. Pre-send it to avoid race in ZX keyboard polling
+    if (new_ss && !WasSS) // SS pressed now. Pre-send it to avoid race in ZX keyboard polling
         presend |= KBD_SHIFTS_SS_MASK;
 
-    if (new_cs && !Flags.WasCS) // CS pressed now. Pre-send it to avoid race in ZX keyboard polling
+    if (new_cs && !WasCS) // CS pressed now. Pre-send it to avoid race in ZX keyboard polling
         presend |= KBD_SHIFTS_CS_MASK;
 
     if (presend != 0)
@@ -132,8 +127,8 @@ void UpdateZxKeys(const KeysList &ZxKeys) {
 
     WriteZxKeyboard(kempston_joystick | (4 << 10));
 
-    Flags.WasSS = new_ss;
-    Flags.WasCS = new_cs;
+    WasSS = new_ss;
+    WasCS = new_cs;
 
 #ifdef WIN32
     if (memcmp(&map, &PrevZxKeys, sizeof map) == 0)
@@ -158,10 +153,14 @@ void UpdateZxKeys(const KeysList &ZxKeys) {
 #endif
 }
 
-bool ZxKeyboard_MapJoystickAndSend(uint16_t JoystickBits) {
+bool ZxKeyboard::MapJoystickAndSend(uint16_t JoystickBits, uint8_t ZxJoystickBits) {
     KeysList ZxKeys;
 
-    MapKeyboard(Flags.IsLeftShiftPressed, Keys, JoystickBits, ZxKeys);
+    KeyboardMapper mapper(JoyMapNum, ZxKeys);
+
+    mapper.MapKeyboard(IsLeftShiftPressed, Keys);
+    mapper.MapJoystick(JoystickBits);
+    mapper.MapZxJoystick(ZxJoystickBits);
 
     UpdateZxKeys(ZxKeys);
 
@@ -173,10 +172,17 @@ bool ZxKeyboard_MapJoystickAndSend(uint16_t JoystickBits) {
     return r;
 }
 
-void ZxKeyboard_Init() {
-    Flags.WasCS = false;
-    Flags.WasSS = false;
-    Flags.IsLeftShiftPressed = false;
+void ZxKeyboard::Init() {
+    WasCS = false;
+    WasSS = false;
+    IsLeftShiftPressed = false;
+    IsLeftCtrlPressed = false;
+    IsLeftAltPressed = false;
+    IsRightShiftPressed = false;
+    IsRightCtrlPressed = false;
+    IsRightAltPressed = false;
+    IsWinPressed = false;
+    JoyMapNum = 0;
 
     WriteZxKeyboard(0 | (0 << 10));
     WriteZxKeyboard(0 | (1 << 10));
@@ -187,21 +193,53 @@ void ZxKeyboard_Init() {
     WriteExt(0 | (3 << 8));
 }
 
-void ZxKeyboard_ProcessKeyPress(uint8_t ScanCode) {
-    if (ScanCode == HID_KEYBOARD_SC_LEFT_SHIFT)
-        Flags.IsLeftShiftPressed = true;
+void ZxKeyboard::KeyPress(uint8_t ScanCode) {
+    IsLeftShiftPressed |= (ScanCode == HID_KEYBOARD_SC_LEFT_SHIFT);
+    IsLeftCtrlPressed |= (ScanCode == HID_KEYBOARD_SC_LEFT_CONTROL);
+    IsLeftAltPressed |= (ScanCode == HID_KEYBOARD_SC_LEFT_ALT);
+    IsRightShiftPressed |= (ScanCode == HID_KEYBOARD_SC_RIGHT_SHIFT);
+    IsRightCtrlPressed |= (ScanCode == HID_KEYBOARD_SC_RIGHT_CONTROL);
+    IsRightAltPressed |= (ScanCode == HID_KEYBOARD_SC_RIGHT_ALT);
+    IsWinPressed |= (ScanCode == HID_KEYBOARD_SC_LEFT_GUI);
+    IsWinPressed |= (ScanCode == HID_KEYBOARD_SC_RIGHT_GUI);
 
-    Keys << ScanCode;
+    if ((IsLeftAltPressed && IsLeftCtrlPressed) || (IsWinPressed))
+        switch (ScanCode) {
+            case HID_KEYBOARD_SC_F5:
+                JoyMapNum = 0;
+                return;
+            case HID_KEYBOARD_SC_F6:
+                JoyMapNum = 1;
+                return;
+            case HID_KEYBOARD_SC_F7:
+                JoyMapNum = 2;
+                return;
+            case HID_KEYBOARD_SC_F8:
+                JoyMapNum = 3;
+                return;
+            default:
+                break;
+        }
+
+    Keys += ScanCode;
 }
 
-void ZxKeyboard_ProcessKeyRelease(uint8_t ScanCode) {
-    if (ScanCode == HID_KEYBOARD_SC_LEFT_SHIFT)
-        Flags.IsLeftShiftPressed = false;
+void ZxKeyboard::KeyRelease(uint8_t ScanCode) {
+    IsLeftShiftPressed &= (ScanCode != HID_KEYBOARD_SC_LEFT_SHIFT);
+    IsLeftCtrlPressed &= (ScanCode != HID_KEYBOARD_SC_LEFT_CONTROL);
+    IsLeftAltPressed &= (ScanCode != HID_KEYBOARD_SC_LEFT_ALT);
+    IsRightShiftPressed &= (ScanCode != HID_KEYBOARD_SC_RIGHT_SHIFT);
+    IsRightCtrlPressed &= (ScanCode != HID_KEYBOARD_SC_RIGHT_CONTROL);
+    IsRightAltPressed &= (ScanCode != HID_KEYBOARD_SC_RIGHT_ALT);
+    IsWinPressed &= (ScanCode != HID_KEYBOARD_SC_LEFT_GUI);
+    IsWinPressed &= (ScanCode != HID_KEYBOARD_SC_RIGHT_GUI);
 
     Keys -= ScanCode;
 }
 
-void ZxKeyboard_ParseBootProtocolKeyboardReport(uint8_t *Data, KeysList &Target) {
+void ZxKeyboard::ParseBootProtocolKeyboardReport(uint8_t *Data) {
+    KeysList Target;
+
     auto mod = Data[0];
 
     if (mod & HID_KEYBOARD_MODIFIER_LEFTSHIFT)
@@ -222,12 +260,20 @@ void ZxKeyboard_ParseBootProtocolKeyboardReport(uint8_t *Data, KeysList &Target)
     if (mod & HID_KEYBOARD_MODIFIER_RIGHTALT)
         Target << HID_KEYBOARD_SC_RIGHT_ALT;
 
+    if (mod & HID_KEYBOARD_MODIFIER_LEFTGUI)
+        Target << HID_KEYBOARD_SC_LEFT_GUI;
+
+    if (mod & HID_KEYBOARD_MODIFIER_RIGHTGUI)
+        Target << HID_KEYBOARD_SC_RIGHT_GUI;
+
     for (uint8_t i = 1; i < 5; ++i)
         if (Data[i] != 0)
             Target << Data[i];
+
+    ProcessKeysList(Target);
 }
 
-void ZxKeyboard_ProcessKeysList(const KeysList &List) {
+void ZxKeyboard::ProcessKeysList(const KeysList &List) {
     auto pressed = List;
     auto released = Keys;
 
@@ -236,9 +282,25 @@ void ZxKeyboard_ProcessKeysList(const KeysList &List) {
 
     for (const auto &key: pressed)
         if (key != 0)
-            ZxKeyboard_ProcessKeyPress(key);
+            KeyPress(key);
 
     for (const auto &key: released)
         if (key != 0)
-            ZxKeyboard_ProcessKeyRelease(key);
+            KeyRelease(key);
+}
+
+bool ZxKeyboard::IsCtrlPressed() const {
+    return IsLeftCtrlPressed || IsRightCtrlPressed;
+}
+
+bool ZxKeyboard::IsAltPressed() const {
+    return IsLeftAltPressed || IsRightAltPressed;
+}
+
+bool ZxKeyboard::IsKeyPressed(uint8_t ScanCode) {
+    for (const auto &item: Keys)
+        if (item == ScanCode)
+            return true;
+
+    return false;
 }

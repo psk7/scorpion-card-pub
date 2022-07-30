@@ -9,9 +9,6 @@ private:
     int8_t wh = 0, buttons = 0;
 
 public:
-    //uint8_t data[4];
-    bool NewData = false;
-
     bool CheckInterface(USB_StdDescriptor_Interface_t *Interface) override;
 
     void OnData(uint8_t *Buffer) override;

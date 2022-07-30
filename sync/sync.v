@@ -2,7 +2,8 @@ module sync(in_hs, in_vs, out_sync, delay_in, delay_out,
 		centronix, strobe, busy,
 		ss, 
 		sck5, sck3, usb_ss5, usb_ss3, usb_miso3, mosi5, mosi3, miso5, ures5, ures3,
-		led
+		led,
+		rst
 	);
 
 	input wire in_hs;
@@ -26,6 +27,7 @@ module sync(in_hs, in_vs, out_sync, delay_in, delay_out,
 	output wire miso5;
 
 	output reg led;
+	input wire rst;
 
 	assign sck3 = sck5;
 	assign usb_ss3 = usb_ss5;
@@ -34,15 +36,10 @@ module sync(in_hs, in_vs, out_sync, delay_in, delay_out,
 
 	wire [7:0] received;
 
-	reg oe1, oe2;
-	wire miso_oe;
-	assign miso_oe = oe1 & oe2;
-
 	wire ss_valid;
 	assign ss_valid = ss ^ usb_ss5;
 
-	//assign miso5 = 1'bZ; // (ss_valid & miso_oe) ? (usb_miso3 & ~usb_ss5) | (miso & ~ss) : 1'bZ;
-	assign miso5 = (ss_valid & miso_oe) ? ((usb_miso3 & ~usb_ss5) | (miso & ~ss)) : 1'bZ;
+	assign miso5 = (ss_valid & rst) ? ((usb_miso3 & ~usb_ss5) | (miso & ~ss)) : 1'bZ;
 
 	// CNTRNX
 	reg cn_inv_strobe;
@@ -53,8 +50,6 @@ module sync(in_hs, in_vs, out_sync, delay_in, delay_out,
 	initial cn_inv_strobe <= 0;
 	initial cn_inv_busy <= 0;
 	initial busy <= 0;
-	initial oe1 <= 0;
-	initial oe2 <= 0;
 
 	wire inner_strobe;
 	assign inner_strobe = strobe ^ cn_inv_strobe;
@@ -100,21 +95,6 @@ module sync(in_hs, in_vs, out_sync, delay_in, delay_out,
 		cn_inv_busy <= received[1];
 		led <= received[2];
 	end
-
-	always @(posedge ss) begin
-		if (received[7:4] == 4'hA)
-			oe1 = 1'b1;
-		else begin
-			if (~oe1 | ~oe2) begin
-				if ((received[7:4] == 4'hE) & oe1)
-					oe2 = 1'b1;
-				else begin
-					oe1 = 1'b0;
-					oe2 = 1'b0;
-				end
-			end
-		end
-	end	
 
 	// SYNC REGEN
 	wire inner_vs;
