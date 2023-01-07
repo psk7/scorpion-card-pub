@@ -9,10 +9,11 @@ public:
     uint8_t leds = 0;
 
     struct {
-        bool IsProtocolEnabled: 1;
+        bool NonConfigured: 1;
+        bool Configured: 1;
     };
 
-    KeyboardDriver() : IsProtocolEnabled(false) {}
+    KeyboardDriver() : NonConfigured(true), Configured(false) {}
 
     bool CheckInterface(USB_StdDescriptor_Interface_t *Interface) override;
 
