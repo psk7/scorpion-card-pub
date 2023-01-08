@@ -101,7 +101,8 @@ task<void> USBT::Run_Coro() {
 
     auto led = zxKeyboard.MapJoystickAndSend(joystickDriver.GetBits(), 0);
 
-    SPI::WriteUSB(IOPINS2, led ? 0x08 : 0);
+    if (keyboardDriver.UsbAddress != 0)
+        SPI::WriteUSB(IOPINS2, led ? 0x08 : 0);
 
     TurboSettingsInfo tsi{};
     ConfigStorage >> tsi;

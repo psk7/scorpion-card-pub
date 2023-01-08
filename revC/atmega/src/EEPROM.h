@@ -43,12 +43,20 @@ struct BoardSettingsInfo {
     bool Led2Enabled;
 };
 
+struct UserSelectedLayoutInfo {
+    uint8_t KeyboardLayout;
+    uint8_t JoystickLayout;
+    uint8_t padding[14];
+};
+
 struct ConfigStorage {
     uint16_t Tag;
     uint16_t Size;
     uint8_t StructRevision;
 
     BoardSettingsInfo BoardSettings;
+
+    UserSelectedLayoutInfo UserSelectedLayouts;
 
     KempstonMouseSettingsInfo KempstonMouseSettings;
 
@@ -70,6 +78,9 @@ public:
     void operator>>(JoystickMappingInfo &Target);
 
     void operator>>(BoardSettingsInfo &Target);
+
+    void operator>>(UserSelectedLayoutInfo &Target);
+    void operator<<(UserSelectedLayoutInfo &Target);
 
     void ReadZxJoystickMappings(uint8_t MapNum, struct JoystickMappingInfo::ZxJoystickMapping &Target);
 

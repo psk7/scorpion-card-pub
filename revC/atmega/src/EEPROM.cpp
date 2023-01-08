@@ -17,6 +17,12 @@ static const struct ConfigStorage ConfigurationStorage STORAGE = {
                 .Led2Enabled = true
         },
 
+        .UserSelectedLayouts = {
+                .KeyboardLayout = 0,
+                .JoystickLayout = 0,
+                .padding = {}
+        },
+
         .KempstonMouseSettings = {
                 .AxisDivider = 2,
                 .WheelDivider = 1,
@@ -93,6 +99,22 @@ static const struct ConfigStorage ConfigurationStorage STORAGE = {
         }
 };
 
+static void eeprom_update(const void *src, const void *dst, size_t bytes) {
+    auto sptr = (unsigned char *) src;
+    auto dptr = (unsigned char *) dst;
+
+    while (bytes-- != 0) {
+        if (eeprom_read_byte(dptr) != (*sptr)) {
+            while (!eeprom_is_ready());
+
+            eeprom_write_byte(dptr, *sptr);
+        }
+
+        ++sptr;
+        ++dptr;
+    }
+}
+
 void EEPROM::operator>>(DedicatedKeysInfo &Target) {
     eeprom_read_block(&Target, (const void *) &ConfigurationStorage.DedicatedKeys, sizeof Target);
 }
@@ -113,6 +135,15 @@ void EEPROM::operator>>(BoardSettingsInfo &Target) {
     eeprom_read_block(&Target, (const void *) &ConfigurationStorage.BoardSettings, sizeof Target);
 }
 
+void EEPROM::operator>>(UserSelectedLayoutInfo &Target) {
+    eeprom_read_block(&Target, (const void *) &ConfigurationStorage.UserSelectedLayouts, sizeof Target);
+}
+
+void EEPROM::operator<<(UserSelectedLayoutInfo &Target) {
+    eeprom_update((const unsigned char *) &Target, (const void *) &ConfigurationStorage.UserSelectedLayouts,
+                  sizeof Target);
+}
+
 void EEPROM::ReadZxJoystickMappings(uint8_t MapNum, struct JoystickMappingInfo::ZxJoystickMapping &Target) {
     eeprom_read_block(&Target, (const void *) &ConfigurationStorage.JoystickMapping.ZxJoystickMapping[MapNum],
                       sizeof Target);
@@ -124,6 +155,6 @@ void EEPROM::ReadJoystickMappings(uint8_t MapNum, struct JoystickMappingInfo::Ma
 }
 
 uint8_t EEPROM::GetConfigByte(uint16_t Address) {
-    return eeprom_read_byte((uint8_t*)Address);
+    return eeprom_read_byte((uint8_t *) Address);
 }
 

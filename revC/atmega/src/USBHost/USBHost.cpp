@@ -318,16 +318,20 @@ task<void> USBHost_Coro() {
     usb_next_address = 1;
     indelay = false;
 
-    SPI::WriteUSB(IOPINS2, 0x08);
+    SPI::WriteUSB(IOPINS2, 0x00);
 
     SPI::WriteUSB(PINCTL, FDUPSPI);    // Enable full duplex
     SPI::WriteUSB(USBCTL, CHIPRES);    // Set chip reset
-    co_await Delay(200);
 
-    SPI::WriteUSB(USBCTL, 0);  // Reset chip reset
+    SPI::WriteUSB(IOPINS2, 0x08);
+
     co_await Delay(200);
 
     SPI::WriteUSB(IOPINS2, 0x00);
+
+    SPI::WriteUSB(USBCTL, 0);  // Reset chip reset
+
+    co_await Delay(200);
 
     SPI::WriteUSB(MODE, DPPULLDN | DMPULLDN | HOST);
     SPI::WriteUSB(HIRQ, CONDETIRQ);
@@ -360,8 +364,6 @@ task<void> USBHost_Coro() {
     // Корневое устройство присутствует
     if (!co_await InitializeNewDevice(RootPort))
         co_return;  // Не удалось подключить корневое устройство - сброс шины
-
-    SPI::WriteUSB(IOPINS2, 0x08);
 
     SPI::WriteUSB(HIRQ, CONDETIRQ);
 

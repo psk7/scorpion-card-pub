@@ -39,7 +39,7 @@ const ZxLayoutKeyRef LeftShiftLayout[256] STORAGE = {
         {ZXKey::_3 | SYM_SHIFT},                            // HID_KEYBOARD_SC_3_AND_HASHMARK
         {ZXKey::_4 | SYM_SHIFT},                            // HID_KEYBOARD_SC_4_AND_DOLLAR
         {ZXKey::_5 | SYM_SHIFT},                            // HID_KEYBOARD_SC_5_AND_PERCENTAGE
-        {},                                                 // HID_KEYBOARD_SC_6_AND_CARET
+        {ZXKey::H | SYM_SHIFT},                             // HID_KEYBOARD_SC_6_AND_CARET
         {ZXKey::_6 | SYM_SHIFT},                            // HID_KEYBOARD_SC_7_AND_AMPERSAND
         {ZXKey::B | SYM_SHIFT},                             // HID_KEYBOARD_SC_8_AND_ASTERISK
         {ZXKey::_8 | SYM_SHIFT},                            // HID_KEYBOARD_SC_9_AND_OPENING_PARENTHESIS
@@ -51,13 +51,13 @@ const ZxLayoutKeyRef LeftShiftLayout[256] STORAGE = {
         {},                                                 // HID_KEYBOARD_SC_SPACE
         {ZXKey::_0 | SYM_SHIFT},                            // HID_KEYBOARD_SC_MINUS_AND_UNDERSCORE
         {ZXKey::K | SYM_SHIFT},                             // HID_KEYBOARD_SC_EQUAL_AND_PLUS
-        {},
-        {},
+        {ZXKey::F | SYM_SHIFT},                             // HID_KEYBOARD_SC_OPENING_BRACKET_AND_OPENING_BRACE
+        {ZXKey::G | SYM_SHIFT},                             // HID_KEYBOARD_SC_CLOSING_BRACKET_AND_CLOSING_BRACE
         {},
         {},
         {ZXKey::Z | SYM_SHIFT},                             // HID_KEYBOARD_SC_SEMICOLON_AND_COLON
         {ZXKey::P | SYM_SHIFT},                             // HID_KEYBOARD_SC_APOSTROPHE_AND_QUOTE
-        {},
+        {},                                                 // HID_KEYBOARD_SC_GRAVE_ACCENT_AND_TILDE
         {ZXKey::R | SYM_SHIFT},                             // HID_KEYBOARD_SC_COMMA_AND_LESS_THAN_SIGN
         {ZXKey::T | SYM_SHIFT},                             // HID_KEYBOARD_SC_DOT_AND_GREATER_THAN_SIGN
         {ZXKey::C | SYM_SHIFT},                             // HID_KEYBOARD_SC_SLASH_AND_QUESTION_MARK

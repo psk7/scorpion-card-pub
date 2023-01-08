@@ -102,6 +102,9 @@ bool ZxKeyboard::MapJoystickAndSend(uint16_t JoystickBits, uint8_t ZxJoystickBit
 }
 
 void ZxKeyboard::Init() {
+    UserSelectedLayoutInfo layoutInfo{};
+    ConfigStorage >> layoutInfo;
+
     WasCS = false;
     WasSS = false;
     IsLeftShiftPressed = false;
@@ -111,7 +114,7 @@ void ZxKeyboard::Init() {
     IsRightCtrlPressed = false;
     IsRightAltPressed = false;
     IsWinPressed = false;
-    JoyMapNum = 0;
+    JoyMapNum = layoutInfo.JoystickLayout;
     CapsLock = false;
     NumLock = false;
 
@@ -119,12 +122,14 @@ void ZxKeyboard::Init() {
     SPI::WriteZxKeyboard(0 | (1 << 10));
     SPI::WriteZxKeyboard(0 | (2 << 10));
     SPI::WriteZxKeyboard(0 | (3 << 10));
-    SPI::WriteZxKeyboard(0 | (4 << 10));
 
-    RereadLayout(0);
+    RereadLayout(layoutInfo.KeyboardLayout);
 }
 
 void ZxKeyboard::RereadLayout(uint8_t LayoutNum) {
+    if (LayoutNum > (sizeof LayoutReferences / sizeof LayoutReferences[0]))
+        LayoutNum = 0;
+
     auto ref = &LayoutReferences[LayoutNum];
     auto iptr = (unsigned char *) ref;
     auto optr = (unsigned char *) &zxLayoutReference;
@@ -148,35 +153,59 @@ void ZxKeyboard::KeyPress(uint8_t ScanCode) {
     if (ScanCode == HID_KEYBOARD_SC_NUM_LOCK)
         NumLock = !NumLock;
 
-    if ((IsLeftAltPressed && IsLeftCtrlPressed) || (IsWinPressed))
+    if ((IsLeftAltPressed && IsLeftCtrlPressed) || (IsWinPressed)) {
+        UserSelectedLayoutInfo layoutInfo{};
+        ConfigStorage >> layoutInfo;
+
+        uint8_t oldkbdlayout = layoutInfo.KeyboardLayout;
+        uint8_t oldjoylayout = layoutInfo.JoystickLayout;
+        bool save = true;
+
         switch (ScanCode) {
             case HID_KEYBOARD_SC_F1:
-                RereadLayout(0);
-                return;
+                layoutInfo.KeyboardLayout = 0;
+                break;
             case HID_KEYBOARD_SC_F2:
-                RereadLayout(1);
-                return;
+                layoutInfo.KeyboardLayout = 1;
+                break;
             case HID_KEYBOARD_SC_F3:
-                RereadLayout(2);
-                return;
+                layoutInfo.KeyboardLayout = 2;
+                break;
             case HID_KEYBOARD_SC_F4:
-                RereadLayout(3);
-                return;
+                layoutInfo.KeyboardLayout = 3;
+                break;
             case HID_KEYBOARD_SC_F5:
-                JoyMapNum = 0;
-                return;
+                layoutInfo.JoystickLayout = 0;
+                break;
             case HID_KEYBOARD_SC_F6:
-                JoyMapNum = 1;
-                return;
+                layoutInfo.JoystickLayout = 1;
+                break;
             case HID_KEYBOARD_SC_F7:
-                JoyMapNum = 2;
-                return;
+                layoutInfo.JoystickLayout = 2;
+                break;
             case HID_KEYBOARD_SC_F8:
-                JoyMapNum = 3;
-                return;
+                layoutInfo.JoystickLayout = 3;
+                break;
             default:
+                save = false;
                 break;
         }
+
+        if (save) {
+            JoyMapNum = layoutInfo.JoystickLayout;
+
+            if (oldkbdlayout != layoutInfo.KeyboardLayout) {
+                RereadLayout(layoutInfo.KeyboardLayout);
+                ConfigStorage << layoutInfo;
+            }
+
+            if (oldjoylayout != layoutInfo.JoystickLayout) {
+                ConfigStorage << layoutInfo;
+            }
+
+            return;
+        }
+    }
 
     if (IsLeftShiftPressed && IsRightShiftPressed)
         RusLayout = !RusLayout;

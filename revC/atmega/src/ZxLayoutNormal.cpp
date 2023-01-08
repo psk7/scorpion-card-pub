@@ -51,13 +51,13 @@ const ZxLayoutKeyRef NormalLayout[256] STORAGE = {
         {ZXKey::Sp},                                        // HID_KEYBOARD_SC_SPACE
         {ZXKey::J | SYM_SHIFT},                             // HID_KEYBOARD_SC_MINUS_AND_UNDERSCORE
         {ZXKey::L | SYM_SHIFT},                             // HID_KEYBOARD_SC_EQUAL_AND_PLUS
-        {},
-        {},
+        {ZXKey::Y | SYM_SHIFT},                             // HID_KEYBOARD_SC_OPENING_BRACKET_AND_OPENING_BRACE
+        {ZXKey::U | SYM_SHIFT},                             // HID_KEYBOARD_SC_CLOSING_BRACKET_AND_CLOSING_BRACE
         {},
         {},
         {ZXKey::O | SYM_SHIFT},                             // HID_KEYBOARD_SC_SEMICOLON_AND_COLON
         {ZXKey::_7 | SYM_SHIFT},                            // HID_KEYBOARD_SC_APOSTROPHE_AND_QUOTE
-        {},
+        {ZXKey::X | SYM_SHIFT},                             // HID_KEYBOARD_SC_GRAVE_ACCENT_AND_TILDE
         {ZXKey::N | SYM_SHIFT},                             // HID_KEYBOARD_SC_COMMA_AND_LESS_THAN_SIGN
         {ZXKey::M | SYM_SHIFT},                             // HID_KEYBOARD_SC_DOT_AND_GREATER_THAN_SIGN
         {ZXKey::V | SYM_SHIFT},                             // HID_KEYBOARD_SC_SLASH_AND_QUESTION_MARK
