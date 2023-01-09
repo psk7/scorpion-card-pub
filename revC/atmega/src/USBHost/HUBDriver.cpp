@@ -1,6 +1,5 @@
 #include "HUBDriver.h"
 #include "HIDClassCommon.h"
-#include "usblib.h"
 #include "SPI.h"
 #include "MAX3421.h"
 

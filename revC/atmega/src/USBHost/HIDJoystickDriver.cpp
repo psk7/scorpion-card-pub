@@ -1,6 +1,5 @@
 #include "HIDJoystickDriver.h"
 #include "HIDClassCommon.h"
-#include "usblib.h"
 #include "USBHost.h"
 #include "HIDReport.h"
 #include "Joystick.h"

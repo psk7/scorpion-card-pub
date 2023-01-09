@@ -1,7 +1,6 @@
 #include "USBHost.h"
 #include "SPI.h"
 #include "Timers.h"
-#include "usblib.h"
 #include "avr/io.h"
 
 #pragma clang diagnostic push
@@ -165,7 +164,7 @@ task<bool> TryReadDeviceDescriptor(PortInfo &PortInfo, uint8_t FirstAttemptSize)
 
     WR_HSOUT
 
-    uint8_t realDescriptorSize = ((USBD::_USB_DEVICE_DESCRIPTOR_ *) buffer)->bLength;
+    uint8_t realDescriptorSize = ((_USB_DEVICE_DESCRIPTOR_ *) buffer)->bLength;
 
     co_await PortInfo.ResetPort();
     co_await Delay(200);

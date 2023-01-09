@@ -1,6 +1,5 @@
 #include "BootProtocolDriver.h"
 #include "HIDClassCommon.h"
-#include "usblib.h"
 #include "USBHost.h"
 
 using namespace USBH;

@@ -7,6 +7,44 @@
 #include "StdRequestType.h"
 #include "usb_coroutines.h"
 
+#define USB_REQUEST_GET_STATUS 0
+#define USB_REQUEST_CLEAR_FEATURE 1
+#define USB_REQUEST_SET_FEATURE 3
+#define USB_REQUEST_SET_ADDRESS 5
+#define USB_REQUEST_GET_DESCRIPTOR 6
+#define USB_REQUEST_SET_DESCRIPTOR 7
+#define USB_REQUEST_GET_CONFIGURATION 8
+#define USB_REQUEST_SET_CONFIGURATION 9
+#define USB_REQUEST_GET_INTERFACE 10
+#define USB_REQUEST_SET_INTERFACE 11
+#define USB_REQUEST_SYNC_FRAME 12
+
+#define USB_DEVICE_DESC_TYPE 1
+#define USB_CFG_DESC_TYPE 2
+#define USB_STR_DESC_TYPE 3
+#define USB_IFACE_DESC_TYPE 4
+#define USB_EP_DESC_TYPE 5
+#define USB_DEVICE_QR_DESC_TYPE 6
+#define USB_OSPEED_CFG_DESC_TYPE 7
+#define USB_IFACE_PWR_DESC_TYPE 8
+
+typedef struct _USB_DEVICE_DESCRIPTOR_ {
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint16_t bcdUSB;
+    uint8_t bDeviceClass;
+    uint8_t bDeviceSubClass;
+    uint8_t bDeviceProtocol;
+    uint8_t bMaxPacketSize0;
+    uint16_t idVendor;
+    uint16_t idProduct;
+    uint16_t bcdDevice;
+    uint8_t iManufacturer;
+    uint8_t iProduct;
+    uint8_t iSerialNumber;
+    uint8_t bNumConfigurations;
+} USB_DEVICE_DESCRIPTOR;
+
 #define USB_BUFFER_SIZE 128
 #define DRIVERS_TABLE_SIZE 3
 
