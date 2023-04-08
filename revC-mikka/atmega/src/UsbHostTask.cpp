@@ -76,8 +76,12 @@ static void MixJoys(bool UpdateLeds) {
 
     zxKeyboard.UpdateZxKeys(mixedImage);
 
-    if (PrintReports)
-        CON << (char) 13 << PSTR("Zx keyboard: ") << Buffer(&mixedImage, sizeof mixedImage) << PSTR("  ");
+    static KeysList shadow;
+
+    if (PrintReports && (mixedImage != shadow))
+        CON << PSTR("Zx keyboard: ") << Buffer(&mixedImage, sizeof mixedImage) << endl();
+
+    shadow = mixedImage;
 
     if (UpdateLeds)
         SPI::WriteUSB(IOPINS2, !mixedImage.empty() ? 0x08 : 0);

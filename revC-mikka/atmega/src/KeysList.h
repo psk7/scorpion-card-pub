@@ -38,6 +38,9 @@ public:
 
     void operator-=(uint8_t Key);
 
+    bool operator==(const KeysList &Other);
+    bool operator!=(const KeysList &Other);
+
     void clear();
 
     bool contains(uint8_t val) const;

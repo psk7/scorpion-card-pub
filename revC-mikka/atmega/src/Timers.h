@@ -8,7 +8,6 @@ extern "C" {
 #endif
 
 void InitializeTimers();
-void Timers_Task();
 
 void Timers_SetupUSBDelay(uint8_t DelayMS);
 int8_t Timers_CheckUSBDelay();

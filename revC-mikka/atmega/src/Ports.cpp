@@ -1,4 +1,5 @@
 #include <avr/io.h>
+#include <avr/interrupt.h>
 #include <util/delay.h>
 #include "SPI.h"
 #include "UsbHostTask.h"
@@ -38,8 +39,9 @@ int main(void) {
 
     USBT::Init();
 
+    sei();
+
     while(1) {
-        Timers_Task();
         USBT::Run();
     }
 }

@@ -52,3 +52,19 @@ bool KeysList::empty() {
 
     return true;
 }
+
+bool KeysList::operator==(const KeysList &Other) {
+    for (uint8_t i = 0; i < sizeof keys; i++)
+        if (keys[i] != Other.keys[i])
+            return false;
+
+    return true;
+}
+
+bool KeysList::operator!=(const KeysList &Other) {
+    for (uint8_t i = 0; i < sizeof keys; i++)
+        if (keys[i] != Other.keys[i])
+            return true;
+
+    return false;
+}

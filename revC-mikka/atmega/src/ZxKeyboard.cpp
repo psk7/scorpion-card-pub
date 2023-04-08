@@ -130,15 +130,6 @@ void ZxKeyboard::RereadLayout(uint8_t LayoutNum) {
 }
 
 void ZxKeyboard::KeyPress(uint8_t ScanCode) {
-    IsLeftShiftPressed |= (ScanCode == HID_KEYBOARD_SC_LEFT_SHIFT);
-    IsLeftCtrlPressed |= (ScanCode == HID_KEYBOARD_SC_LEFT_CONTROL);
-    IsLeftAltPressed |= (ScanCode == HID_KEYBOARD_SC_LEFT_ALT);
-    IsRightShiftPressed |= (ScanCode == HID_KEYBOARD_SC_RIGHT_SHIFT);
-    IsRightCtrlPressed |= (ScanCode == HID_KEYBOARD_SC_RIGHT_CONTROL);
-    IsRightAltPressed |= (ScanCode == HID_KEYBOARD_SC_RIGHT_ALT);
-    IsWinPressed |= (ScanCode == HID_KEYBOARD_SC_LEFT_GUI);
-    IsWinPressed |= (ScanCode == HID_KEYBOARD_SC_RIGHT_GUI);
-
     //if (ScanCode == HID_KEYBOARD_SC_CAPS_LOCK)
     //    CapsLock = !CapsLock;
 
@@ -206,15 +197,6 @@ void ZxKeyboard::KeyPress(uint8_t ScanCode) {
 }
 
 void ZxKeyboard::KeyRelease(uint8_t ScanCode) {
-    IsLeftShiftPressed &= (ScanCode != HID_KEYBOARD_SC_LEFT_SHIFT);
-    IsLeftCtrlPressed &= (ScanCode != HID_KEYBOARD_SC_LEFT_CONTROL);
-    IsLeftAltPressed &= (ScanCode != HID_KEYBOARD_SC_LEFT_ALT);
-    IsRightShiftPressed &= (ScanCode != HID_KEYBOARD_SC_RIGHT_SHIFT);
-    IsRightCtrlPressed &= (ScanCode != HID_KEYBOARD_SC_RIGHT_CONTROL);
-    IsRightAltPressed &= (ScanCode != HID_KEYBOARD_SC_RIGHT_ALT);
-    IsWinPressed &= (ScanCode != HID_KEYBOARD_SC_LEFT_GUI);
-    IsWinPressed &= (ScanCode != HID_KEYBOARD_SC_RIGHT_GUI);
-
     Keys -= ScanCode;
 }
 
@@ -222,6 +204,15 @@ void ZxKeyboard::ParseBootProtocolKeyboardReport(uint8_t *Data) {
     KeysList Target;
 
     auto mod = Data[0];
+
+    IsLeftShiftPressed = (mod & HID_KEYBOARD_MODIFIER_LEFTSHIFT) != 0;
+    IsLeftCtrlPressed = (mod & HID_KEYBOARD_MODIFIER_LEFTCTRL) != 0;
+    IsLeftAltPressed = (mod & HID_KEYBOARD_MODIFIER_LEFTALT) != 0;
+    IsRightShiftPressed = (mod & HID_KEYBOARD_MODIFIER_RIGHTSHIFT) != 0;
+    IsRightCtrlPressed = (mod & HID_KEYBOARD_MODIFIER_RIGHTCTRL) != 0;
+    IsRightAltPressed = (mod & HID_KEYBOARD_MODIFIER_RIGHTALT) != 0;
+    IsWinPressed = (mod & HID_KEYBOARD_MODIFIER_LEFTGUI) != 0;
+    IsWinPressed = (mod & HID_KEYBOARD_MODIFIER_RIGHTGUI) != 0;
 
     if (mod & HID_KEYBOARD_MODIFIER_LEFTSHIFT)
         Target << HID_KEYBOARD_SC_LEFT_SHIFT;
